@@ -68,7 +68,7 @@ python dg_cartesia_agent_e2e.py 5     # custom interactive conversation
 
 ### Internal Test Suite (`test_multilingual_cartesia.py`)
 
-Automated test harness that runs multiple scenarios and generates a structured report:
+Automated test harness that runs 7 scenarios and generates a structured report:
 
 ```bash
 source .env
@@ -78,3 +78,34 @@ python test_multilingual_cartesia.py T5 T6    # run multiple tests
 ```
 
 Results are saved as JSON in `test_results/` and audio in `agent_audio_out/`.
+
+## Test Scenarios & Results
+
+### Core Validation Tests (T1–T4)
+
+| Test | Scenario | Config | What It Validates | Result |
+|------|----------|--------|-------------------|--------|
+| **T1** | `agent.language=multi` + Cartesia `sonic-multilingual` | `agent.language=multi`, `listen.language=multi` | Does DG accept `language=multi` with Cartesia TTS without throwing `INVALID_SETTINGS`? | **PASS** — Settings accepted. Agent correctly switched EN → ES → EN |
+| **T2** | `agent.language=en` + language-mirroring prompt (fallback) | `agent.language=en`, `cartesia.language=en` | If `multi` were blocked, can the LLM prompt still drive Spanish output through Cartesia? | **PASS** — Mirrored Spanish despite `language=en` config. Minor slow-speak warning |
+| **T3** | Strict English-only output | `agent.language=multi`, `listen.language=multi` | Can an LLM prompt force English-only responses even when user speaks Spanish? | **PASS** — Responded in English to Spanish input. Prompt override works |
+| **T4** | Conditional mixed language | `agent.language=multi`, `listen.language=multi` | Can the agent mix EN/ES only when the user initiates Spanish, and revert to EN-only otherwise? | **PASS** — Mixed only when user spoke Spanish; reverted to English cleanly |
+
+### Samsara-Specific Tests (T5–T6)
+
+| Test | Scenario | Use Case | What It Validates | Result |
+|------|----------|----------|-------------------|--------|
+| **T5** | Spanish-speaking tech mixing English terms | Field technician says "Cierra el work order", "check engine light está encendido" | Does the agent understand mixed ES/EN input and always respond in Spanish? | **PASS** — Understood English technical terms in Spanish sentences, responded entirely in Spanish |
+| **T6** | Sales demo per-turn language switching | User alternates full turns: EN → ES → EN → ES | Does the agent cleanly switch output language to match each turn? | **PASS** — Matched language on every turn with clean switching |
+
+### Edge Case Test (T7)
+
+| Test | Scenario | What It Validates | Result |
+|------|----------|-------------------|--------|
+| **T7** | Code-switching, French, Japanese, rapid switching | Mid-sentence EN/ES code-switch, French input, Japanese input, rapid back-to-English | **PASS** — Handled all cases: responded in ES for code-switched input, French for French, Japanese for Japanese (はい、日本語でお話ししても大丈夫です), and English on demand |
+
+### Key Findings
+
+- **`agent.language=multi` works with Cartesia TTS** — contradicts current Deepgram docs that imply it may not be supported.
+- **LLM prompts are the primary control** for output language — the prompt reliably overrides language config settings.
+- **Cartesia `sonic-multilingual`** correctly synthesizes audio in English, Spanish, French, and Japanese without needing per-language voice IDs.
+- **`nova-3` STT with `listen.language=multi`** accurately transcribes all tested languages including mid-sentence code-switching.
