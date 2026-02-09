@@ -160,9 +160,6 @@ SCENARIOS = [
         "turns": STANDARD_TURNS,
     },
 
-    # ══════════════════════════════════════════════════════════════════
-    # SAMSARA / PROSPECT-SPECIFIC SCENARIOS
-    # ══════════════════════════════════════════════════════════════════
 
     # ── Test 5: Field technician — Spanish primary, English terms mixed in ──
     {
@@ -235,11 +232,7 @@ SCENARIOS = [
              "Perfecto. Ahora en español: ¿hay algún problema reportado con la flota?"),
         ],
     },
-
-    # ══════════════════════════════════════════════════════════════════
-    # EDGE CASES
-    # ══════════════════════════════════════════════════════════════════
-
+    
     # ── Test 7: Edge cases ──
     {
         "id": "T7_edge_cases",
@@ -549,120 +542,7 @@ def print_report(all_results: list[dict]):
 
         print()
 
-    # ── Answers to Asana Questions ────────────────────────────────────
-    print(f"\n{sep}")
-    print("  ANSWERS TO ASANA TASK QUESTIONS")
-    print(f"{sep}\n")
-
-    t1 = next((r for r in all_results if r["scenario_id"] == "T1_multi_language_cartesia"), None)
-    t2 = next((r for r in all_results if r["scenario_id"] == "T2_en_language_mirror_prompt"), None)
-    t3 = next((r for r in all_results if r["scenario_id"] == "T3_strict_english_only"), None)
-    t4 = next((r for r in all_results if r["scenario_id"] == "T4_conditional_mix"), None)
-    t5 = next((r for r in all_results if r["scenario_id"] == "T5_field_tech_spanish_primary"), None)
-    t6 = next((r for r in all_results if r["scenario_id"] == "T6_sales_demo_switching"), None)
-    t7 = next((r for r in all_results if r["scenario_id"] == "T7_edge_cases"), None)
-
-    # Q1
-    print("  Q1: Does agent.language=multi work with Cartesia TTS?")
-    print("  " + "─" * 50)
-    if t1:
-        if t1["settings_applied"]:
-            print("  ANSWER: YES — Settings were accepted by Deepgram.")
-            if t1["audio_files"]:
-                print(f"           Audio was generated ({len(t1['audio_files'])} files).")
-            print("           No INVALID_SETTINGS error was returned.")
-            print("           NOTE: DG docs say 'multi is only supported with ElevenLabs or")
-            print("           OpenAI TTS' — but this test proves Cartesia also works.")
-        else:
-            errors = [e for e in t1["errors"] if e["code"] != "CLIENT_MESSAGE_TIMEOUT"]
-            if errors:
-                print(f"  ANSWER: NO — Blocked: {errors[0]['description']}")
-            else:
-                print("  ANSWER: UNCLEAR — settings not applied, no clear error")
-    print()
-
-    # Q2 — Language mirroring
-    print("  Q2: What happens English -> Spanish -> English?")
-    print("  " + "─" * 50)
-    for test_r in [t1, t2]:
-        if not test_r:
-            continue
-        print(f"  [{test_r['scenario_id']}]:")
-        for msg in test_r["conversation"]:
-            role = "USER " if msg["role"] == "user" else "AGENT"
-            label = f" [{msg.get('label','')}]" if msg.get("label") else ""
-            print(f"    {role}{label}: {msg['content'][:100]}")
-        print()
-
-    # Q3 — English only
-    print("  Q3: Can you force English-only responses even with Spanish input?")
-    print("  " + "─" * 50)
-    if t3:
-        agent_msgs = [m for m in t3["conversation"] if m["role"] == "assistant"]
-        if agent_msgs:
-            all_english = all(
-                not any(c in m["content"] for c in "áéíóúñ¿¡")
-                for m in agent_msgs
-            )
-            print(f"  ANSWER: {'YES' if all_english else 'PARTIALLY'} — "
-                  f"The LLM {'obeyed' if all_english else 'mostly obeyed'} the strict English prompt.")
-            for m in agent_msgs:
-                print(f"    AGENT: {m['content'][:120]}")
-    print()
-
-    # Q4 — Conditional mix
-    print("  Q4: Can you conditionally mix languages based on user input?")
-    print("  " + "─" * 50)
-    if t4:
-        for msg in t4["conversation"]:
-            role = "USER " if msg["role"] == "user" else "AGENT"
-            label = f" [{msg.get('label','')}]" if msg.get("label") else ""
-            print(f"    {role}{label}: {msg['content'][:120]}")
-    print()
-
-    # Q5 — Samsara field tech
-    print("  Q5: SAMSARA — Spanish tech mixing English terms (e.g. 'cierra el work order')?")
-    print("  " + "─" * 50)
-    if t5:
-        for msg in t5["conversation"]:
-            role = "USER " if msg["role"] == "user" else "AGENT"
-            label = f" [{msg.get('label','')}]" if msg.get("label") else ""
-            print(f"    {role}{label}: {msg['content'][:120]}")
-        agent_msgs = [m for m in t5["conversation"] if m["role"] == "assistant"]
-        if agent_msgs:
-            has_spanish = any(
-                any(c in m["content"] for c in "áéíóúñ¿¡")
-                for m in agent_msgs
-            )
-            print(f"\n  Agent responded in Spanish: {'YES' if has_spanish else 'NO'}")
-    print()
-
-    # Q6 — Sales demo switching
-    print("  Q6: SAMSARA — Sales demo per-turn language switching?")
-    print("  " + "─" * 50)
-    if t6:
-        for msg in t6["conversation"]:
-            role = "USER " if msg["role"] == "user" else "AGENT"
-            label = f" [{msg.get('label','')}]" if msg.get("label") else ""
-            print(f"    {role}{label}: {msg['content'][:120]}")
-    print()
-
-    # Q7 — Edge cases
-    print("  Q7: Edge cases — code-switching, French, Japanese?")
-    print("  " + "─" * 50)
-    if t7:
-        for msg in t7["conversation"]:
-            role = "USER " if msg["role"] == "user" else "AGENT"
-            label = f" [{msg.get('label','')}]" if msg.get("label") else ""
-            print(f"    {role}{label}: {msg['content'][:120]}")
-    print()
-
-    # Save full JSON report
-    report_path = os.path.join(OUT_DIR, f"test_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json")
-    with open(report_path, "w") as f:
-        json.dump(all_results, f, indent=2, ensure_ascii=False)
-    print(f"  Full JSON report: {report_path}")
-    print()
+    
 
 
 # ═══════════════════════════════════════════════════════════════════════
