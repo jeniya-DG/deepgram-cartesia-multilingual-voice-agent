@@ -10,13 +10,7 @@ End-to-end demo and validation of multilingual voice agent capabilities using **
 | LLM | OpenAI (managed by DG) | GPT-4o-mini |
 | TTS | Cartesia | sonic-multilingual |
 
-## Key Findings
 
-- **`agent.language=multi` works with Cartesia TTS** — no `INVALID_SETTINGS` error, despite DG docs saying multi is only supported with ElevenLabs or OpenAI TTS.
-- **Language mirroring works** — the LLM + Cartesia correctly mirrors the user's language per-turn (English, Spanish, French, Japanese all tested).
-- **Strict English-only works** — the LLM prompt can force English-only responses even when the user speaks Spanish.
-- **Code-switching works** — Spanish-speaking users can mix in English technical terms (e.g. "cierra el work order") and the agent responds in Spanish while understanding the English terms.
-- **Per-turn switching works** — user can alternate between full English and full Spanish turns and the agent matches each time.
 
 ## Setup
 
@@ -84,20 +78,3 @@ python test_multilingual_cartesia.py T5 T6    # run multiple tests
 ```
 
 Results are saved as JSON in `test_results/` and audio in `agent_audio_out/`.
-
-## Configuration Notes
-
-- The `agent.language` and `agent.listen.provider.language` fields should be set to `"multi"` for multilingual support.
-- The LLM **prompt** is the primary control for output language behavior — Cartesia's TTS "reads whatever language the LLM outputs."
-- Cartesia's `sonic-multilingual` model handles Spanish, French, Japanese, and more through a single voice.
-- The `KeepAlive` message (`{"type": "KeepAlive"}`) should be sent every ~8 seconds when not streaming audio to prevent connection timeout.
-
-## Files
-
-```
-├── dg_cartesia_agent_e2e.py      # Client-facing interactive demo
-├── test_multilingual_cartesia.py  # Internal automated test suite
-├── requirements.txt               # Python dependencies
-├── .env.example                   # Template for API keys
-└── README.md
-```
