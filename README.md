@@ -103,9 +103,3 @@ Results are saved as JSON in `test_results/` and audio in `agent_audio_out/`.
 |------|----------|-------------------|--------|
 | **T7** | Code-switching, French, Japanese, rapid switching | Mid-sentence EN/ES code-switch, French input, Japanese input, rapid back-to-English | **PASS** — Handled all cases: responded in ES for code-switched input, French for French, Japanese for Japanese (はい、日本語でお話ししても大丈夫です), and English on demand |
 
-### Key Findings
-
-- **`agent.language=multi` works with Cartesia TTS** — contradicts current Deepgram docs that imply it may not be supported.
-- **LLM prompts are the primary control** for output language — the prompt reliably overrides language config settings.
-- **Cartesia `sonic-multilingual`** correctly synthesizes audio in English, Spanish, French, and Japanese without needing per-language voice IDs.
-- **`nova-3` STT with `listen.language=multi`** accurately transcribes all tested languages including mid-sentence code-switching.
